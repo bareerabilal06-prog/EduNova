@@ -6,7 +6,7 @@ import '../../providers/profile_provider.dart';
 import 'dashboard_screen.dart';
 
 class OnboardingProfile extends StatefulWidget {
-  const OnboardingProfile({Key? key}) : super(key: key);
+  const OnboardingProfile({super.key});
 
   @override
   State<OnboardingProfile> createState() => _OnboardingProfileState();
@@ -84,18 +84,22 @@ class _OnboardingProfileState extends State<OnboardingProfile> {
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),
-              child: Card(
-                elevation: 8,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                margin: const EdgeInsets.symmetric(horizontal: 8),
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600), // 👈 Limit width
+                  child: Card(
+                    elevation: 8,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const Text(
                           'Create Your Profile',
@@ -127,13 +131,13 @@ class _OnboardingProfileState extends State<OnboardingProfile> {
 
                         // Gender
                         DropdownButtonFormField<String>(
-                          value: _selectedGender,
+                          initialValue: _selectedGender,
                           decoration: const InputDecoration(
                             labelText: 'Gender',
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.wc_outlined),
                           ),
-                          items: ['Male', 'Female', 'Other']
+                          items: ['Male', 'Female']
                               .map(
                                 (gender) => DropdownMenuItem(
                               value: gender,
@@ -151,7 +155,7 @@ class _OnboardingProfileState extends State<OnboardingProfile> {
 
                         // Age
                         DropdownButtonFormField<int>(
-                          value: _selectedAge,
+                          initialValue: _selectedAge,
                           decoration: const InputDecoration(
                             labelText: 'Age',
                             border: OutlineInputBorder(),
@@ -217,6 +221,8 @@ class _OnboardingProfileState extends State<OnboardingProfile> {
                   ),
                 ),
               ),
+            ),
+          ),
             ),
           ),
         ),

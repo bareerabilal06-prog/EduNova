@@ -1,8 +1,9 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 class TTSService {
   final FlutterTts _tts = FlutterTts();
-  String _currentLanguage = 'en-US';
   bool _isMaleVoice = true;
 
   TTSService() {
@@ -15,33 +16,84 @@ class TTSService {
     await _tts.setPitch(1.0);
   }
 
-  Future<void> speak(String text, {bool isUrdu = false}) async {
-    try {
-      String language = isUrdu ? 'ur-PK' : 'en-US';
-      await _tts.setLanguage(language);
+  void setMaleVoice(bool isMale) {
+    _isMaleVoice = isMale;
+  }
 
-      // Set voice based on preference
+  /// Speak text. Returns false if Urdu is not available on desktop
+  Future<bool> speak(String text, {bool isUrdu = false}) async {
+    debugPrint('🔊 TTSService.speak called. text="$text", isUrdu=$isUrdu');
+    try {
+      if (text.trim().isEmpty) return true;
+
       if (isUrdu) {
-        await _tts.setVoice({'name': _isMaleVoice ? 'ur-pk-x-urm-local' : 'ur-pk-x-urf-local', 'locale': 'ur-PK'});
-      } else {
-        await _tts.setVoice({'name': _isMaleVoice ? 'en-us-x-sfg#male_1-local' : 'en-us-x-sfg#female_1-local', 'locale': 'en-US'});
+        if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+          debugPrint('⚠️ Urdu TTS not supported on desktop');
+          return false;
+        }
+        await _tts.setLanguage('ur-PK');
+        await _tts.speak(text);
+        return true;
       }
 
+      await _tts.setLanguage('en-US');
+      await _setEnglishVoice();
+
       await _tts.speak(text);
+      return true;
     } catch (e) {
-      print('TTS Error: $e');
+      debugPrint('TTS Error: $e');
+      return !isUrdu;
+    }
+  }
+
+  /// Dynamically set English voice based on _isMaleVoice, with desktop fallback
+  Future<void> _setEnglishVoice() async {
+    try {
+      final voices = await _tts.getVoices;
+      debugPrint('Available voices: $voices');
+
+      if (voices == null || voices.isEmpty) return;
+
+      Map<String, dynamic> rawVoice;
+
+      if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+        // Desktop fallback: pick first English voice
+        rawVoice = voices.firstWhere(
+              (v) => (v['locale']?.toString().toLowerCase() ?? '').startsWith('en'),
+          orElse: () => voices.first,
+        );
+      } else {
+        // Mobile: try to pick male/female voice
+        rawVoice = voices.firstWhere(
+              (v) {
+            final name = v['name']?.toString().toLowerCase() ?? '';
+            final locale = v['locale']?.toString().toLowerCase() ?? '';
+            final isEnglish = locale.startsWith('en');
+            if (!isEnglish) return false;
+            return _isMaleVoice ? name.contains('male') : name.contains('female');
+          },
+          orElse: () {
+            // fallback to first English voice if preferred not found
+            return voices.firstWhere(
+                  (v) => (v['locale']?.toString().toLowerCase() ?? '').startsWith('en'),
+              orElse: () => voices.first,
+            );
+          },
+        );
+      }
+
+      // Convert Map<String, dynamic> to Map<String, String>
+      final voice = rawVoice.map((key, value) => MapEntry(key, value.toString()));
+
+      await _tts.setVoice(voice);
+      debugPrint('Selected voice: $voice');
+    } catch (e) {
+      debugPrint('Error selecting voice: $e');
     }
   }
 
   Future<void> stop() async {
     await _tts.stop();
-  }
-
-  void setMaleVoice(bool isMale) {
-    _isMaleVoice = isMale;
-  }
-
-  Future<List<dynamic>> getAvailableLanguages() async {
-    return await _tts.getLanguages;
   }
 }

@@ -1,6 +1,6 @@
-# edu_nova
+# Edu Nova
 
-A new Flutter project.
+A Project Belongs to Voice for Every Student.
 
 ## Getting Started
 

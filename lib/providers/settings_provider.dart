@@ -7,6 +7,10 @@ class SettingsProvider with ChangeNotifier {
   bool _isMaleVoice = true;
   String _preferredLanguage = 'en';
 
+  // Optional callback to notify PhraseProvider
+  VoidCallback? onVoiceGenderChanged;
+  VoidCallback? onLanguageChanged;
+
   bool get isLargeText => _isLargeText;
   bool get isHighContrast => _isHighContrast;
   bool get isMaleVoice => _isMaleVoice;
@@ -44,6 +48,11 @@ class SettingsProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('maleVoice', _isMaleVoice);
     notifyListeners();
+
+    // Notify PhraseProvider immediately
+    if (onVoiceGenderChanged != null) {
+      onVoiceGenderChanged!();
+    }
   }
 
   Future<void> setLanguage(String lang) async {
@@ -51,5 +60,10 @@ class SettingsProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('language', lang);
     notifyListeners();
+
+    // Notify PhraseProvider immediately
+    if (onLanguageChanged != null) {
+      onLanguageChanged!();
+    }
   }
 }

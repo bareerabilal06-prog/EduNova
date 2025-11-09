@@ -4,7 +4,7 @@ import '../../core/models/profile.dart';
 import '../../providers/profile_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  const ProfileScreen({super.key});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -42,6 +42,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
+  Future<void> _updateProfile(ProfileProvider provider) async {
+    if (_formKey.currentState!.validate()) {
+      final updatedProfile = Profile(
+        id: provider.profile?.id ?? 1,
+        name: _nameController.text.trim(),
+        gender: _selectedGender,
+        age: _selectedAge,
+        email: _emailController.text.trim().isEmpty
+            ? null
+            : _emailController.text.trim(),
+      );
+
+      await provider.updateProfile(updatedProfile);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile updated successfully'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -63,115 +88,143 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           return GestureDetector(
             onTap: () => FocusScope.of(context).unfocus(),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: ListView(
-                  children: [
-                    Center(
-                      child: Column(
-                        children: [
-                          const CircleAvatar(
-                            radius: 50,
-                            backgroundColor: Color(0xFF1E88E5),
-                            child: Icon(Icons.person, size: 50, color: Colors.white),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Form(
+                    key: _formKey,
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: [
+                        const SizedBox(height: 16),
+
+                        // Avatar + Name
+                        Center(
+                          child: Column(
+                            children: [
+                              const CircleAvatar(
+                                radius: 50,
+                                backgroundColor: Color(0xFF1E88E5),
+                                child: Icon(Icons.person, size: 55, color: Colors.white),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                _nameController.text.isEmpty
+                                    ? 'Your Profile'
+                                    : _nameController.text,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 10),
-                          Text(
-                            _nameController.text.isEmpty
-                                ? 'Your Profile'
-                                : _nameController.text,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        // Name
+                        TextFormField(
+                          controller: _nameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Name',
+                            prefixIcon: Icon(Icons.person_outline),
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Please enter your name';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Gender
+                        DropdownButtonFormField<String>(
+                          initialValue: _selectedGender,
+                          decoration: const InputDecoration(
+                            labelText: 'Gender',
+                            prefixIcon: Icon(Icons.wc),
+                            border: OutlineInputBorder(),
+                          ),
+                          items: ['Male', 'Female']
+                              .map(
+                                (gender) => DropdownMenuItem(
+                              value: gender,
+                              child: Text(gender),
                             ),
+                          )
+                              .toList(),
+                          onChanged: (value) =>
+                              setState(() => _selectedGender = value!),
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Age
+                        DropdownButtonFormField<int>(
+                          initialValue: _selectedAge,
+                          decoration: const InputDecoration(
+                            labelText: 'Age',
+                            prefixIcon: Icon(Icons.cake_outlined),
+                            border: OutlineInputBorder(),
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Name',
-                        prefixIcon: Icon(Icons.person_outline),
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please enter your name';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: _selectedGender,
-                      decoration: const InputDecoration(
-                        labelText: 'Gender',
-                        prefixIcon: Icon(Icons.wc),
-                        border: OutlineInputBorder(),
-                      ),
-                      items: ['Male', 'Female', 'Other']
-                          .map(
-                            (gender) => DropdownMenuItem(
-                          value: gender,
-                          child: Text(gender),
+                          items: List.generate(50, (i) => i + 5)
+                              .map(
+                                (age) => DropdownMenuItem(
+                              value: age,
+                              child: Text(age.toString()),
+                            ),
+                          )
+                              .toList(),
+                          onChanged: (value) =>
+                              setState(() => _selectedAge = value!),
                         ),
-                      )
-                          .toList(),
-                      onChanged: (value) {
-                        setState(() => _selectedGender = value!);
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<int>(
-                      value: _selectedAge,
-                      decoration: const InputDecoration(
-                        labelText: 'Age',
-                        prefixIcon: Icon(Icons.cake_outlined),
-                        border: OutlineInputBorder(),
-                      ),
-                      items: List.generate(50, (i) => i + 5)
-                          .map(
-                            (age) => DropdownMenuItem(
-                          value: age,
-                          child: Text(age.toString()),
+                        const SizedBox(height: 20),
+
+                        // Email
+                        TextFormField(
+                          controller: _emailController,
+                          decoration: const InputDecoration(
+                            labelText: 'Email (Optional)',
+                            prefixIcon: Icon(Icons.email_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.emailAddress,
                         ),
-                      )
-                          .toList(),
-                      onChanged: (value) {
-                        setState(() => _selectedAge = value!);
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'Email (Optional)',
-                        prefixIcon: Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      onPressed: () => _updateProfile(provider),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E88E5),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+
+                        const SizedBox(height: 32),
+
+                        // Save Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.save, color: Colors.white),
+                            label: const Text(
+                              'Save Profile',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF1E88E5),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 2,
+                            ),
+                            onPressed: () => _updateProfile(provider),
+                          ),
                         ),
-                      ),
-                      icon: const Icon(Icons.save),
-                      label: const Text(
-                        'Save Profile',
-                        style: TextStyle(fontSize: 18, color: Colors.white),
-                      ),
+                        const SizedBox(height: 24),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -179,29 +232,5 @@ class _ProfileScreenState extends State<ProfileScreen> {
         },
       ),
     );
-  }
-
-  Future<void> _updateProfile(ProfileProvider provider) async {
-    if (_formKey.currentState!.validate()) {
-      final updatedProfile = Profile(
-        id: provider.profile?.id ?? 1,
-        name: _nameController.text.trim(),
-        gender: _selectedGender,
-        age: _selectedAge,
-        email: _emailController.text.trim().isEmpty
-            ? null
-            : _emailController.text.trim(),
-      );
-
-      await provider.updateProfile(updatedProfile);
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profile updated successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    }
   }
 }

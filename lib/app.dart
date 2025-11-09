@@ -4,7 +4,7 @@ import 'ui/screens/splash_screen.dart';
 import 'providers/settings_provider.dart';
 
 class EduNovaApp extends StatelessWidget {
-  const EduNovaApp({Key? key}) : super(key: key);
+  const EduNovaApp({super.key});
 
   @override
   Widget build(BuildContext context) {

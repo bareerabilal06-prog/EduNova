@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import '../../providers/profile_provider.dart';
 import 'onboarding_profile.dart';
 import 'dashboard_screen.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -25,30 +26,30 @@ class _SplashScreenState extends State<SplashScreen>
     _animation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
     _controller.forward();
 
-    _checkFirstRun();
+    _navigate();
   }
 
-  Future<void> _checkFirstRun() async {
-    // Add a short delay for splash animation
-    await Future.delayed(const Duration(seconds: 3));
+  Future<void> _navigate() async {
+    await Future.delayed(const Duration(seconds: 2));
 
-    // Load SharedPreferences
-    final prefs = await SharedPreferences.getInstance();
-    final isFirstRun = prefs.getBool('isFirstRun') ?? true;
+    final profileProvider =
+    Provider.of<ProfileProvider>(context, listen: false);
+    await profileProvider.loadProfile(); // ensures local data is loaded
 
-    // Safety check to ensure widget is still in the tree
-    if (!mounted || !context.mounted) return;
+    if (!mounted) return;
 
-    // Navigate to appropriate screen
-    if (isFirstRun) {
+    if (profileProvider.profile == null) {
+      // No profile saved → show onboarding
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const OnboardingProfile()),
       );
     } else {
+      // Profile exists → go to dashboard
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        //MaterialPageRoute(builder: (_) => const OnboardingProfile()),
       );
     }
   }
